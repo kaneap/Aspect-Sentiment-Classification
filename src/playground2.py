@@ -8,7 +8,7 @@ from tqdm import tqdm
 # Load the pre-trained model and the tokenizer
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=3) # since we have three sentiment classes
-
+model.to(device)
 
 file_name = "../data/dev.json"
 dataset = get_dataset(file_name, tokenizer, mode="ignore")
