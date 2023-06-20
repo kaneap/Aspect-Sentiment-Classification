@@ -2,6 +2,7 @@ from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassific
 import torch
 from dataset import *
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from tqdm import tqdm
 
 
 # Load the pre-trained model and the tokenizer
@@ -73,7 +74,8 @@ for epoch_i in range(0, epochs):
     total_train_loss = 0
     model.train()
 
-    for step, batch in enumerate(train_dataloader):
+    loop = tqdm(train_dataloader)
+    for batch in loop:
         b_input_ids = batch[0].to(device)
         b_attention_mask = batch[1].to(device)
         b_labels = batch[2].to(device)
@@ -92,6 +94,10 @@ for epoch_i in range(0, epochs):
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
         optimizer.step()
+        
+        # add stuff to progress bar in the end
+        loop.set_description(f"Train Epoch [{epoch_i+1}/{epochs}]")
+        loop.set_postfix(loss=loss)
 
     avg_train_loss = total_train_loss / len(train_dataloader)
 
@@ -111,7 +117,8 @@ for epoch_i in range(0, epochs):
     total_eval_loss = 0
     nb_eval_steps = 0
 
-    for batch in validation_dataloader:
+    loop = tqdm(validation_dataloader)
+    for batch in loop:
         b_input_ids = batch[0].to(device)
         b_attention_mask = batch[1].to(device)
         b_labels = batch[2].to(device)
@@ -133,6 +140,9 @@ for epoch_i in range(0, epochs):
         # Calculate the accuracy for this batch of test sentences, and
         # accumulate it over all batches.
         total_eval_accuracy += flat_accuracy(logits, label_ids)
+
+        # add stuff to progress bar in the end
+        loop.set_description(f"Test Epoch [{epoch_i+1}/{epochs}]")
         
 
     # Report the final accuracy for this validation run.

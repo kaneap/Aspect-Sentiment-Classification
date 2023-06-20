@@ -91,9 +91,8 @@ for epoch_i in range(0, epochs):
     total_train_loss = 0
     model.train()
 
-    #loop = tqdm(train_dataloader)
-
-    for step, batch in enumerate(train_dataloader):
+    loop = tqdm(train_dataloader)
+    for step, batch in loop:
         b_input_ids = batch[0].to(device)
         b_attention_mask = batch[1].to(device)
         b_labels = batch[2].to(device)
@@ -113,6 +112,10 @@ for epoch_i in range(0, epochs):
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
         optimizer.step()
+
+        # add stuff to progress bar in the end
+        loop.set_description(f"Epoch [{epoch_i}/{epochs}]")
+        loop.set_postfix(loss=loss)
 
     avg_train_loss = total_train_loss / len(train_dataloader)
 
