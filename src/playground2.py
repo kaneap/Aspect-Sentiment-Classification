@@ -1,61 +1,16 @@
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 import torch
+from dataset import *
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 # Load the pre-trained model and the tokenizer
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=3) # since we have three sentiment classes
 
-# Use the tokenizer to encode the text data
-def encode_data(tokenizer, sentences, labels, max_length):
-    input_ids = []
-    attention_masks = []
-
-    for sentence in sentences:
-        encoding = tokenizer.encode_plus(sentence, 
-                                         truncation=True, 
-                                         max_length=max_length, 
-                                         padding='max_length',
-                                         return_tensors='pt')
-
-        input_ids.append(encoding['input_ids'])
-        attention_masks.append(encoding['attention_mask'])
-
-    input_ids = torch.cat(input_ids, dim=0)
-    attention_masks = torch.cat(attention_masks, dim=0)
-    labels = torch.tensor(labels)
-
-    return input_ids, attention_masks, labels
-
-import pandas as pd
-import json
-from torch.utils.data import Dataset, DataLoader
-
-def load_data(file_name):
-    with open(file_name, 'r') as f:
-        data = json.load(f)
-    return data
 
 file_name = "../data/dev.json"
-data = load_data(file_name)
-
-# Convert the dictionary to a pandas DataFrame
-df = pd.DataFrame.from_dict(data, orient='index')
-
-# Encode our concatenated data
-sentences = df['sentence'].values
-labels = df['polarity'].values
-sen = {"positive": 0, "negative": 2, "neutral": 1}
-labels = [sen[p] for p in labels]
-input_ids, attention_masks, labels = encode_data(tokenizer, sentences, labels, max_length=128)
-
-
-
-
-from torch.utils.data import TensorDataset, random_split, DataLoader
-
-# Combine the training inputs into a TensorDataset
-dataset = TensorDataset(input_ids, attention_masks, labels)
+dataset = get_dataset(file_name, tokenizer, mode="ignore")
 
 # Create a 90-10 train-validation split
 train_size = int(0.9 * len(dataset))
@@ -66,6 +21,13 @@ train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 # Create the DataLoaders for our training and validation datasets
 train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=32)
 validation_dataloader = DataLoader(val_dataset, shuffle=False, batch_size=32)
+
+# Create the DataLoaders for our training and validation datasets
+file_name_train = "../data/train.json"
+file_name_test = "../data/test.json"
+mode = "integrate"
+train_dataloader = get_dataloader(file_name_train, tokenizer, 32, mode)
+validation_dataloader = get_dataloader(file_name_test, tokenizer, 32, mode)
 
 
 # Specify loss function

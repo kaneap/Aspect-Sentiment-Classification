@@ -1,5 +1,6 @@
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 import torch
+from tqdm import tqdm
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the pre-trained model and the tokenizer
@@ -89,6 +90,8 @@ for epoch_i in range(0, epochs):
     t0 = time.time()
     total_train_loss = 0
     model.train()
+
+    #loop = tqdm(train_dataloader)
 
     for step, batch in enumerate(train_dataloader):
         b_input_ids = batch[0].to(device)
